@@ -4,6 +4,9 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include "svec.h"
+#include "ast.h"
+#include "tokens.h"
 
 void
 execute(char* cmd)
@@ -53,12 +56,19 @@ execute(char* cmd)
 int
 main(int argc, char* argv[])
 {
-    char cmd[256];
-
+    char cmd = NULL;
+    size_t cmd_len = 0;
+    svec* command_tokens = make_svec();
     if (argc == 1) {
         printf("nush$ ");
         fflush(stdout);
-        fgets(cmd, 256, stdin);
+        ssize_t line_len = getline(&cmd, &cmd_len, stdin);
+        if (line_len = -1) {
+            break;
+        }
+        tokenize(buf, command_tokens)
+        nush_ast* ast = parse(command_tokens);
+        
     }
     else {
         memcpy(cmd, "echo", 5);
