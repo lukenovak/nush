@@ -7,10 +7,16 @@
 #include "svec.h"
 #include "ast.h"
 #include "tokens.h"
+#include "parse.h"
 
 void
 execute(char* cmd)
 {
+    
+    svec* command_tokens = make_svec();
+    tokenize(cmd, command_tokens);
+    nush_ast* ast = parse(command_tokens);
+    
     int cpid;
 
     if ((cpid = fork())) {
@@ -38,7 +44,6 @@ execute(char* cmd)
         for (int ii = 0; ii < strlen(cmd); ++ii) {
             if (cmd[ii] == ' ') {
                 cmd[ii] = 0;
-                break;
             }
         }
 
@@ -56,18 +61,15 @@ execute(char* cmd)
 int
 main(int argc, char* argv[])
 {
-    char cmd = NULL;
+    char* cmd = NULL;
     size_t cmd_len = 0;
-    svec* command_tokens = make_svec();
     if (argc == 1) {
         printf("nush$ ");
         fflush(stdout);
         ssize_t line_len = getline(&cmd, &cmd_len, stdin);
-        if (line_len = -1) {
-            break;
+        if (line_len == -1) {
+            return;
         }
-        tokenize(buf, command_tokens)
-        nush_ast* ast = parse(command_tokens);
         
     }
     else {
