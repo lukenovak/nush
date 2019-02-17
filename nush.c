@@ -30,6 +30,8 @@ main(int argc, char* argv[])
 {
     char* cmd = NULL;
     size_t cmd_len = 0;
+    
+    // if we don't get any arguments
     if (argc == 1) {
         printf("nush$ ");
         fflush(stdout);
@@ -39,8 +41,12 @@ main(int argc, char* argv[])
         }
         
     }
+    
+    // else we are taking in a path to a script as an argument
     else {
-        memcpy(cmd, "echo", 5);
+        FILE* script = fopen(argv[1], "r");
+        ssize_t line_len = getline(&cmd, &cmd_len, script);
+        fclose(script);
     }
 
     execute(cmd);
