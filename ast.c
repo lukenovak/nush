@@ -43,38 +43,3 @@ free_ast(nush_ast* ast)
     }
 }
 
-//TODO redir right side in
-static void
-left_arrow_eval(nush_ast* left, nush_ast* right)
-{
-    return;
-
-}
-
-
-static void
-right_arrow_eval(nush_ast* left, nush_ast* right)
-{
-    return;
-}
-
-
-
-//TODO might not need this
-void
-ast_eval(nush_ast* ast)
-{
-    switch (ast->op[0]) {
-    case ';':
-        return ast_eval(ast->arg0);
-    case '<':
-        return left_arrow_eval(ast->arg0, ast->arg1);
-    case '>':
-        return ast_eval(ast->arg0);
-    default:
-        {
-        char* args[2] = {ast->command->data[0], 0}; //argv array for execution
-        printf("%s\n", args[0]);
-        }
-    }
-}

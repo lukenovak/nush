@@ -5,6 +5,45 @@
 #include <sys/types.h>
 
 #include "ast.h"
+#include "svec.h"
+
+//TODO redir right side into left side
+static void
+left_arrow_eval(nush_ast* left, nush_ast* right)
+{
+    return;
+
+}
+
+//TODO redir left side into right side
+// helper that will allow us to evaluate the right arrow
+static void
+right_arrow_eval(nush_ast* left, nush_ast* right)
+{
+    return;
+}
+
+
+//TODO might not need this
+static void
+eval_ast(nush_ast* ast)
+{
+    char** args = malloc(sizeof(ast->command->data));
+    switch (ast->op[0]) {
+    case ';':
+        return eval_ast(ast->arg0);
+    case '<':
+        return left_arrow_eval(ast->arg0, ast->arg1);
+    case '>':
+        return eval_ast(ast->arg0);
+    default:
+        for (int ii = 0; ii < ast->command->size; ++ii) {
+            args[ii] = ast->command->data[ii];
+            printf("adding %s\n", args[ii]);
+        }
+        execvp(args[0], args);
+    }
+}
 
 // the idea behind the eval function is drawn upon the "eval" function
 // that would go into creating a programming lanugage. (CS4400)
