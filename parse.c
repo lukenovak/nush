@@ -11,7 +11,7 @@
 
 int find_first_index(svec* toks, const char* tt)
 {
-    for(int ii = 0; ii < toks-> size; ++ii) {
+    for(int ii = 0; ii < toks->size; ++ii) {
         if (strcmp(toks->data[ii], tt) == 0) { // if the string matches
             return ii; // return the index of the matching string
         }
@@ -48,7 +48,7 @@ parse(svec* tokens)
     const char* ops[] = {"||", "&&", "|", "&", ";", ">", "<"};
     
     // big if: if the vector contains one of our operators
-    for (int ii = 0; ii < sizeof(ops); ++ii) {
+    for (int ii = 0; ii < 7; ++ii) {
         const char* op = ops[ii]; //selecting the operator
 
         // if our vector has an operator, we parse that out into the ast
