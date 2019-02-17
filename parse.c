@@ -74,8 +74,7 @@ parse(svec* tokens)
         return ast;
     }
     
-    // else else case
-    puts("this shouldn't happen");
+    puts("trying to parse an empty vector");
     exit(1);
 
 }

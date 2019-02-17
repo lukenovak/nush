@@ -23,72 +23,75 @@ right_arrow_eval(nush_ast* left, nush_ast* right)
     return;
 }
 
-
-//TODO might not need this
+// evaluation in the base case (we know op == NULL)
 static void
-eval_ast(nush_ast* ast)
-{
-    char** args = malloc(sizeof(ast->command->data));
-    if (ast->op == NULL) {
-        for (int ii = 0; ii < ast->command->size; ++ii) {
-            args[ii] = ast->command->data[ii];
-        }
-        execvp(args[0], args);
-    }
-    switch (ast->op[0]) {
-    case ';':
-        return eval_ast(ast->arg0);
-    case '<':
-        return left_arrow_eval(ast->arg0, ast->arg1);
-    case '>':
-        return eval_ast(ast->arg0);
-    default:
+eval_base(nush_ast* ast)
+{   
+    // in case we get a null argument fed in, we return
+    if (ast == NULL) {
         return;
     }
-}
-
-// the idea behind the eval function is drawn upon the "eval" function
-// that would go into creating a programming lanugage. (CS4400)
-void
-eval(nush_ast* ast)
-{
+    
+    char** args = malloc(8 * (ast->command->size));
     int cpid;
-
     if ((cpid = fork())) {
         // in the parent process
-        printf("Parent pid: %d\n", getpid());
-        printf("Parent knows child pid: %d\n", cpid);
-
-        // Child may still be running until we wait.
-
+        //printf("Parent pid: %d\n", getpid());
+        //printf("Parent knows child pid: %d\n", cpid);
+        // Child may still be running until we wait
         int status;
         waitpid(cpid, &status, 0);
 
-        printf("== executed program complete ==\n");
+        //printf("== executed program complete ==\n");
 
-        printf("child returned with wait code %d\n", status);
+        //printf("child returned with wait code %d\n", status);
         if (WIFEXITED(status)) {
-            printf("child exited with exit code (or main returned) %d\n", WEXITSTATUS(status));
+            //printf("child exited with exit code (or main returned) %d\n", WEXITSTATUS(status));
         }
     }
     else {
         // child process
-        printf("Child pid: %d\n", getpid());
-        printf("Child knows parent pid: %d\n", getppid());
+        //printf("Child pid: %d\n", getpid());
+        //printf("Child knows parent pid: %d\n", getppid());
 
-        // WE SHOULDN'T NEED THIS CODE ANYMORE
-        /*for (int ii = 0; ii < strlen(cmd); ++ii) {
-            if (cmd[ii] == ' ') {
-                cmd[ii] = 0;
-            }
-        }*/
 
-        printf("== executed program's output: ==\n");
-
-        eval_ast(ast); // we delegate the execution to the ast because its
-                       // structure is recursive (welcome to PL, bitch)
+        //printf("== executed program's output: ==\n");
+            
+        for (int ii = 0; ii < ast->command->size; ++ii) {
+            args[ii] = ast->command->data[ii];
+            args[ii + 1] = NULL;
+        }
+        execvp(args[0], args); 
         printf("Can't get here, exec only returns on error.");
     }
-        
+    free(args);
     return;
 }
+
+// the main eval function, with cases for each operator, delegates
+// the evaluation to the appropriate function
+void
+eval(nush_ast* ast)
+{
+    char** args = malloc(sizeof(ast->command->data));
+    
+    // checking for asts with no operator
+    if (ast->op == NULL) {
+        return eval_base(ast);
+    }
+
+    // if we know we have an operator, we act accordingly
+    switch (ast->op[0]) {
+    case ';':
+        eval(ast->arg0);
+        eval(ast->arg1);
+        return;
+    case '<':
+        return left_arrow_eval(ast->arg0, ast->arg1);
+    case '>':
+        return eval_base(ast->arg0);
+    default: // in this case we have an invalid operator
+        puts("invalid operator");
+    }
+}
+

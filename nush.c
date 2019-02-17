@@ -33,23 +33,30 @@ main(int argc, char* argv[])
     
     // if we don't get any arguments
     if (argc == 1) {
-        printf("nush$ ");
-        fflush(stdout);
-        ssize_t line_len = getline(&cmd, &cmd_len, stdin);
-        if (line_len == -1) {
-            return;
+        while(1) {
+            printf("nush$ ");
+            fflush(stdout);
+            ssize_t line_len = getline(&cmd, &cmd_len, stdin);
+            if (line_len == -1) {
+                exit(1);
+            }
+            execute(cmd);
         }
-        
     }
     
     // else we are taking in a path to a script as an argument
     else {
         FILE* script = fopen(argv[1], "r");
-        ssize_t line_len = getline(&cmd, &cmd_len, script);
+        while (getline(&cmd, &cmd_len, script)) {
+            if (strlen(cmd) > 0) {
+                execute(cmd);
+            }
+            cmd = NULL;
+            cmd_len = 0;
+        }
         fclose(script);
     }
 
-    execute(cmd);
 
     return 0;
 }
