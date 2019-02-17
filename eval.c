@@ -29,6 +29,12 @@ static void
 eval_ast(nush_ast* ast)
 {
     char** args = malloc(sizeof(ast->command->data));
+    if (ast->op == NULL) {
+        for (int ii = 0; ii < ast->command->size; ++ii) {
+            args[ii] = ast->command->data[ii];
+        }
+        execvp(args[0], args);
+    }
     switch (ast->op[0]) {
     case ';':
         return eval_ast(ast->arg0);
@@ -37,11 +43,7 @@ eval_ast(nush_ast* ast)
     case '>':
         return eval_ast(ast->arg0);
     default:
-        for (int ii = 0; ii < ast->command->size; ++ii) {
-            args[ii] = ast->command->data[ii];
-            printf("adding %s\n", args[ii]);
-        }
-        execvp(args[0], args);
+        return;
     }
 }
 
