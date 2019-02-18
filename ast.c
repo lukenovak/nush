@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "svec.h"
 #include <unistd.h>
 #include "ast.h"
@@ -17,10 +18,11 @@ make_ast_command(svec* command) {
 
 // makes an AST that contains an operator, and the two sub-commands
 nush_ast*
-make_ast_op(char* op, nush_ast* c0, nush_ast* c1)
+make_ast_op(const char* op, nush_ast* c0, nush_ast* c1)
 {
     nush_ast* ast = malloc(sizeof(nush_ast));
-    ast->op = op;
+    ast->op = malloc(sizeof(op));
+    memcpy(ast->op, op, strlen(op) + 1);
     ast->arg0 = c0;
     ast->arg1 = c1;
     return ast;
@@ -32,11 +34,15 @@ free_ast(nush_ast* ast)
 {
     if (ast) {
         if (ast->arg0) {
-            free(ast->arg0);
+            free_ast(ast->arg0);
         }
 
         if (ast->arg1) {
-            free(ast->arg0);
+            free_ast(ast->arg1);
+        }
+
+        if (ast->op) {
+            free(ast->op);
         }
 
         free(ast);
