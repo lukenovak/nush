@@ -61,8 +61,6 @@ parse(svec* tokens)
             // finally we make the ast with the operator in the operator spot
             nush_ast* ast = make_ast_op(op, parse(xs), parse(ys)); // recursion
             // free and return
-            free_svec(xs);
-            free_svec(ys);
             return ast;
         }
     }

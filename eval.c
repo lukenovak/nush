@@ -7,6 +7,9 @@
 #include "ast.h"
 #include "svec.h"
 
+//declarations
+void eval();
+
 //TODO redir right side into left side
 static void
 left_arrow_eval(nush_ast* left, nush_ast* right)
@@ -23,6 +26,7 @@ right_arrow_eval(nush_ast* left, nush_ast* right)
     return;
 }
 
+// evaluation of the semicolon (we fork and then eval the two subtrees
 static void
 semicolon_eval(nush_ast* left, nush_ast* right) {
    
@@ -39,7 +43,6 @@ semicolon_eval(nush_ast* left, nush_ast* right) {
         eval(left);
         eval(right);
     }
-    return;
 }
 // evaluation in the base case (we know op == NULL)
 static void
@@ -79,8 +82,8 @@ eval_base(nush_ast* ast)
             args[ii] = ast->command->data[ii];
             args[ii + 1] = NULL;
         }
-        execvp(args[0], args); 
-        printf("Can't get here, exec only returns on error.");
+        execvp(args[0], args);
+        printf("%s: command not found (execvp returned error)\n", args[0]);
         exit(1);
     }
     free(args);
