@@ -54,27 +54,44 @@ and_or_eval(nush_ast* left, nush_ast* right, char op)
     if ((cpid = fork())) {
         int status;
         waitpid(cpid, &status, 0);
-        
-        // the or case
-        if (op == '|') {
-            if (status != 0) {
-                exit(eval(right));
+        if (WIFEXITED(status)) {
+            // the or case
+            if (op == '|') {
+                if (WEXITSTATUS(status) != 0) {
+                    return WEXITSTATUS(status);
+                }
+                else {
+                    return 0;
+                }
             }
             else {
-                exit(0);
-            }
-        }
-        else {
-            if (status == 0) {
-                exit(eval(right));
-            }
-            else {
-                exit(status);
+                if (WEXITSTATUS(status) == 0) {
+                    return WEXITSTATUS(status); 
+                }
+                else {
+                    return status;
+                }
             }
         }
     }
     else { // in the child
-        exit(eval(left));
+        int exit_code = eval(left);
+        if (op == '|') {
+            if(exit_code != 0) {
+                exit(eval(right));
+            }
+            else {
+                exit(exit_code);
+            }
+        }
+        else { //and case
+            if (exit_code == 0) {
+                exit(eval(right));
+            }
+            else {
+                exit(exit_code);
+            }
+        }
     }       
 }
 
@@ -102,6 +119,7 @@ eval_base(nush_ast* ast)
         //printf("child returned with wait code %d\n", status);
         if (WIFEXITED(status)) {
             //printf("child exited with exit code (or main returned) %d\n", WEXITSTATUS(status));
+            return status;
         }
     }
     else {
@@ -116,7 +134,7 @@ eval_base(nush_ast* ast)
             args[ii] = ast->command->data[ii];
             args[ii + 1] = NULL;
         }
-        exit(execvp(args[0], args));
+        (execvp(args[0], args));
         printf("%s: command not found (execvp returned error)\n", args[0]);
         exit(1);
     }
