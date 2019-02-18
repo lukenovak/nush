@@ -15,7 +15,7 @@ int eval();
 static int
 left_arrow_eval(nush_ast* left, nush_ast* right)
 {
-    return;
+    return eval(left);
 
 }
 
@@ -35,14 +35,27 @@ semicolon_eval(nush_ast* left, nush_ast* right) {
     if ((cpid = fork())) {
         int status;
         waitpid(cpid, &status, 0);
-
+        
         if (WIFEXITED(status)) {
-            //idk?
+            return eval(right);
         }
     }
     else { //child
-        int left_exit_code = eval(left);
-        exit(eval(right));
+        exit(eval(left));
+    }
+}
+
+// evaluates the first process in the background
+static int
+background_eval(nush_ast* left, nush_ast* right)
+{
+    int cpid;
+    if ((cpid = fork())) {
+        // we DON'T WAIT in the parent here
+        return eval(right);
+    }
+    else { //child
+        exit(eval(left));
     }
 }
 
@@ -55,10 +68,11 @@ and_or_eval(nush_ast* left, nush_ast* right, char op)
         int status;
         waitpid(cpid, &status, 0);
         if (WIFEXITED(status)) {
+            //printf("exited with code %d\n", status);
             // the or case
             if (op == '|') {
                 if (WEXITSTATUS(status) != 0) {
-                    return WEXITSTATUS(status);
+                    return eval(right);
                 }
                 else {
                     return 0;
@@ -66,7 +80,7 @@ and_or_eval(nush_ast* left, nush_ast* right, char op)
             }
             else {
                 if (WEXITSTATUS(status) == 0) {
-                    return WEXITSTATUS(status); 
+                    return eval(right); 
                 }
                 else {
                     return status;
@@ -75,7 +89,7 @@ and_or_eval(nush_ast* left, nush_ast* right, char op)
         }
     }
     else { // in the child
-        int exit_code = eval(left);
+        /*int exit_code = eval(left);
         if (op == '|') {
             if(exit_code != 0) {
                 exit(eval(right));
@@ -91,7 +105,8 @@ and_or_eval(nush_ast* left, nush_ast* right, char op)
             else {
                 exit(exit_code);
             }
-        }
+        }*/
+        exit(eval(left));
     }       
 }
 
@@ -103,8 +118,12 @@ eval_base(nush_ast* ast)
     if (ast == NULL) {
         return -1;
     }
+
+    // exit case
+    if (strcmp(ast->command->data[0], "exit") == 0) {
+        return -1;
+    }
     
-    char** args = malloc(8 * (ast->command->size));
     int cpid;
     if ((cpid = fork())) {
         // in the parent process
@@ -119,7 +138,7 @@ eval_base(nush_ast* ast)
         //printf("child returned with wait code %d\n", status);
         if (WIFEXITED(status)) {
             //printf("child exited with exit code (or main returned) %d\n", WEXITSTATUS(status));
-            return status;
+            return WEXITSTATUS(status);
         }
     }
     else {
@@ -130,16 +149,13 @@ eval_base(nush_ast* ast)
 
         //printf("== executed program's output: ==\n");
             
-        for (int ii = 0; ii < ast->command->size; ++ii) {
-            args[ii] = ast->command->data[ii];
-            args[ii + 1] = NULL;
-        }
-        (execvp(args[0], args));
-        printf("%s: command not found (execvp returned error)\n", args[0]);
+        execvp(ast->command->data[0], ast->command->data);
+        printf("%s: command not found (execvp returned error)\n", 
+            ast->command->data[0]);
         exit(1);
     }
-    free(args);
-    return 0;
+    // we shouldn't get here
+    return -1;
 }
 
 // the main eval function, with cases for each operator, delegates
@@ -167,7 +183,12 @@ eval(nush_ast* ast)
             return and_or_eval(ast->arg0, ast->arg1, '|');
         }
     case '&':
-        return and_or_eval(ast->arg0, ast->arg1, '&');
+        if (op_length == 2 && ast->op[1] == '&') {
+            return and_or_eval(ast->arg0, ast->arg1, '&');
+        }
+        else {
+            return background_eval(ast->arg0, ast->arg1);
+        }
     default: // in this case we have an invalid operator
         puts("invalid operator");
     }

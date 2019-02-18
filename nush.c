@@ -17,12 +17,11 @@ execute(char* cmd)
     svec* command_tokens = make_svec();
     tokenize(cmd, command_tokens);
     nush_ast* ast = parse(command_tokens);
-    
-    int cpid;
-   
-    // we delegate the evaluation to the eval.h file
-    eval(ast);
-
+    int exit_code = eval(ast);
+    if (exit_code == -1) {
+        exit(0);
+    }
+    free_ast(ast);
 }
 
 int

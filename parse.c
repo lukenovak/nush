@@ -49,7 +49,8 @@ parse(svec* tokens)
     
     // big if: if the vector contains one of our operators
     for (int ii = 0; ii < 7; ++ii) {
-        const char* op = ops[ii]; //selecting the operator
+        char op[sizeof(ops[ii])]; //selecting the operator
+        memcpy(op, ops[ii], strlen(ops[ii]) + 1);
 
         // if our vector has an operator, we parse that out into the ast
         if (contains(tokens, op)) {
@@ -73,6 +74,5 @@ parse(svec* tokens)
     }
     
     puts("trying to parse an empty vector");
-    exit(1);
-
+    return make_ast_command(tokens);
 }
