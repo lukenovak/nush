@@ -36,7 +36,7 @@ main(int argc, char* argv[])
         while(1) {
             printf("nush$ ");
             fflush(stdout);
-            ssize_t line_len = getline(&cmd, &cmd_len, stdin);
+            ssize_t line_len = getline(&cmd, &cmd_len, stdin); 
             if (line_len == -1) {
                 exit(1);
             }
@@ -47,7 +47,7 @@ main(int argc, char* argv[])
     // else we are taking in a path to a script as an argument
     else {
         FILE* script = fopen(argv[1], "r");
-        while (getline(&cmd, &cmd_len, script)) {
+        while (getline(&cmd, &cmd_len, script) > 0) {
             if (strlen(cmd) > 0) {
                 execute(cmd);
             }

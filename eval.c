@@ -23,6 +23,24 @@ right_arrow_eval(nush_ast* left, nush_ast* right)
     return;
 }
 
+static void
+semicolon_eval(nush_ast* left, nush_ast* right) {
+   
+    int cpid;
+    if ((cpid = fork())) {
+        int status;
+        waitpid(cpid, &status, 0);
+
+        if (WIFEXITED(status)) {
+            //idk?
+        }
+    }
+    else { //child
+        eval(left);
+        eval(right);
+    }
+    return;
+}
 // evaluation in the base case (we know op == NULL)
 static void
 eval_base(nush_ast* ast)
@@ -63,6 +81,7 @@ eval_base(nush_ast* ast)
         }
         execvp(args[0], args); 
         printf("Can't get here, exec only returns on error.");
+        exit(1);
     }
     free(args);
     return;
@@ -83,9 +102,7 @@ eval(nush_ast* ast)
     // if we know we have an operator, we act accordingly
     switch (ast->op[0]) {
     case ';':
-        eval(ast->arg0);
-        eval(ast->arg1);
-        return;
+        return semicolon_eval(ast->arg0, ast->arg1);
     case '<':
         return left_arrow_eval(ast->arg0, ast->arg1);
     case '>':
