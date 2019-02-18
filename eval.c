@@ -1,17 +1,18 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <string.h>
 #include <sys/wait.h>
 #include <sys/types.h>
 
 #include "ast.h"
 #include "svec.h"
 
-//declarations
-void eval();
+//declarations that we need first
+int eval();
 
 //TODO redir right side into left side
-static void
+static int
 left_arrow_eval(nush_ast* left, nush_ast* right)
 {
     return;
@@ -20,14 +21,14 @@ left_arrow_eval(nush_ast* left, nush_ast* right)
 
 //TODO redir left side into right side
 // helper that will allow us to evaluate the right arrow
-static void
+static int
 right_arrow_eval(nush_ast* left, nush_ast* right)
 {
-    return;
+    return eval(left);
 }
 
 // evaluation of the semicolon (we fork and then eval the two subtrees
-static void
+static int
 semicolon_eval(nush_ast* left, nush_ast* right) {
    
     int cpid;
@@ -40,17 +41,50 @@ semicolon_eval(nush_ast* left, nush_ast* right) {
         }
     }
     else { //child
-        eval(left);
-        eval(right);
+        int left_exit_code = eval(left);
+        exit(eval(right));
     }
 }
+
+// evaluates and/or
+static int
+and_or_eval(nush_ast* left, nush_ast* right, char op)
+{
+    int cpid;
+    if ((cpid = fork())) {
+        int status;
+        waitpid(cpid, &status, 0);
+        
+        // the or case
+        if (op == '|') {
+            if (status != 0) {
+                exit(eval(right));
+            }
+            else {
+                exit(0);
+            }
+        }
+        else {
+            if (status == 0) {
+                exit(eval(right));
+            }
+            else {
+                exit(status);
+            }
+        }
+    }
+    else { // in the child
+        exit(eval(left));
+    }       
+}
+
 // evaluation in the base case (we know op == NULL)
-static void
+static int
 eval_base(nush_ast* ast)
 {   
     // in case we get a null argument fed in, we return
     if (ast == NULL) {
-        return;
+        return -1;
     }
     
     char** args = malloc(8 * (ast->command->size));
@@ -59,7 +93,7 @@ eval_base(nush_ast* ast)
         // in the parent process
         //printf("Parent pid: %d\n", getpid());
         //printf("Parent knows child pid: %d\n", cpid);
-        // Child may still be running until we wait
+         //Child may still be running until we wait
         int status;
         waitpid(cpid, &status, 0);
 
@@ -82,26 +116,26 @@ eval_base(nush_ast* ast)
             args[ii] = ast->command->data[ii];
             args[ii + 1] = NULL;
         }
-        execvp(args[0], args);
+        exit(execvp(args[0], args));
         printf("%s: command not found (execvp returned error)\n", args[0]);
         exit(1);
     }
     free(args);
-    return;
+    return 0;
 }
 
 // the main eval function, with cases for each operator, delegates
 // the evaluation to the appropriate function
-void
+int
 eval(nush_ast* ast)
 {
-    char** args = malloc(sizeof(ast->command->data));
     
     // checking for asts with no operator
     if (ast->op == NULL) {
         return eval_base(ast);
     }
-
+    
+    int op_length = strlen(ast->op);
     // if we know we have an operator, we act accordingly
     switch (ast->op[0]) {
     case ';':
@@ -110,6 +144,12 @@ eval(nush_ast* ast)
         return left_arrow_eval(ast->arg0, ast->arg1);
     case '>':
         return eval_base(ast->arg0);
+    case '|':
+        if (op_length == 2 && ast->op[1] == '|') {
+            return and_or_eval(ast->arg0, ast->arg1, '|');
+        }
+    case '&':
+        return and_or_eval(ast->arg0, ast->arg1, '&');
     default: // in this case we have an invalid operator
         puts("invalid operator");
     }

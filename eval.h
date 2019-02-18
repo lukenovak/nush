@@ -4,6 +4,6 @@
 #include <stdlib.h>
 #include "ast.h"
 
-void eval(nush_ast* ast);
+int eval(nush_ast* ast);
 
 #endif
