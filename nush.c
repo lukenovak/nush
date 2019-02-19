@@ -22,6 +22,7 @@ execute(char* cmd)
         exit(0);
     }
     free_ast(ast);
+    free_svec(command_tokens);
 }
 
 int
@@ -45,15 +46,16 @@ main(int argc, char* argv[])
     
     // else we are taking in a path to a script as an argument
     else {
+        svec* lines = make_svec();
         FILE* script = fopen(argv[1], "r");
-        while (getline(&cmd, &cmd_len, script) > 0) {
-            if (strlen(cmd) > 0) {
-                execute(cmd);
-            }
-            cmd = NULL;
-            cmd_len = 0;
+        while (getline(&cmd, &cmd_len, script) > -1) {
+            svec_push_back(lines, cmd);
         }
         fclose(script);
+        // after we have read all lines, we execute the commands in order
+        for (int ii = 0; ii < lines->size; ++ii) {
+            execute(lines->data[ii]);
+        }
     }
 
 
