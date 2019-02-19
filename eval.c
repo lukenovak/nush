@@ -5,6 +5,7 @@
 #include <sys/wait.h>
 #include <sys/types.h>
 #include <fcntl.h>
+#include <wordexp.h>
 #include "ast.h"
 #include "svec.h"
 
@@ -160,26 +161,46 @@ eval_base(nush_ast* ast)
 {   
     // in case we get a null argument fed in, we return
     if (ast == NULL) {
-        return -1;
+        return 1;
     }
     
     // empty case
     if (ast->command->size == 0) {
         return 0;
     }
-    
-    // exit case
+   
+    // BUILTINS:
+    // exit
     if (strcmp(ast->command->data[0], "exit") == 0) {
         return -1;
     }
 
+    //cd
+    if (strcmp(ast->command->data[0], "cd") == 0) {
+        if (ast->command->size == 1) {
+            // we can do tilde expansion with wordexp
+            wordexp_t expanded;
+            wordexp("~", &expanded, 0);
+            char* home_directory = expanded.we_wordv[0];
+            wordfree(&expanded);
+            chdir(home_directory);
+            return 0;
+        }
+        else {
+            if (chdir(ast->command->data[1]) == 0) {
+                return 0;
+            }
+            perror("cd: invalid path");
+        }
+    }
+
+
     
     int cpid;
-    if ((cpid = fork())) {
+    if (cpid = fork()) {
         // in the parent process
         //printf("Parent pid: %d\n", getpid());
         //printf("Parent knows child pid: %d\n", cpid);
-         //Child may still be running until we wait
         int status;
         waitpid(cpid, &status, 0);
 
@@ -195,7 +216,6 @@ eval_base(nush_ast* ast)
         // child process
         //printf("Child pid: %d\n", getpid());
         //printf("Child knows parent pid: %d\n", getppid());
-
 
         //printf("== executed program's output: ==\n");
             
@@ -213,7 +233,9 @@ eval_base(nush_ast* ast)
 int
 eval(nush_ast* ast)
 {
-    
+    if (!ast) {
+        return 1;
+    }
     // checking for asts with no operator
     if (ast->op == NULL) {
         return eval_base(ast);
