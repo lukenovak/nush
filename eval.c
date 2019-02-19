@@ -11,12 +11,34 @@
 //declarations that we need first
 int eval();
 
-//TODO redir right side into left side
+// helper that will allow us to use files as input for commands
+// essentially redirecting stdin
 static int
 left_arrow_eval(nush_ast* left, nush_ast* right)
 {
-    return eval(left);
+    int cpid;
 
+    if (cpid = fork()) {
+        int status;
+        waitpid(cpid, &status, 0);
+        if (WIFEXITED(status)) {
+            return WEXITSTATUS(status);
+        }
+    }
+    else {
+        if (right->command && right->command->size > 0) {
+            int fd = open(right->command->data[0], 0);
+            if (fd == -1) {
+                printf("%s isn't a valid file\n", right->command->data[0]);
+                exit(1);
+            }
+            close(0);
+            dup(fd);
+            close(fd);
+            exit(eval(left));
+        }
+    }
+    return -1; // we should never get here 
 }
 
 // helper that will allow us to evaluate the right arrow
@@ -35,7 +57,11 @@ right_arrow_eval(nush_ast* left, nush_ast* right) //right should be a path
     else { //child process
         // we need to parse the right first to make sure it's a valid path
         if(right->command && right->command->size > 0) {
-            int fd = open(right->command->data[0], O_CREAT | O_WRONLY | O_TRUNC, 0644);
+            int fd = creat(right->command->data[0], 0644);
+            if (fd == -1) {
+                printf("%s is not a valid path\n", right->command->data[0]);
+                exit(1);
+            }
             close(1); // closing stdout
             dup(fd);
             close(fd);
