@@ -18,7 +18,7 @@ make_ast_command(svec* command) {
 
 // makes an AST that contains an operator, and the two sub-commands
 nush_ast*
-make_ast_op(const char* op, nush_ast* c0, nush_ast* c1)
+make_ast_op(char* op, nush_ast* c0, nush_ast* c1)
 {
     nush_ast* ast = malloc(sizeof(nush_ast));
     ast->op = malloc(sizeof(op));

@@ -73,6 +73,5 @@ parse(svec* tokens)
         return ast;
     }
     
-    puts("trying to parse an empty vector");
     return make_ast_command(tokens);
 }

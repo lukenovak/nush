@@ -12,7 +12,7 @@ typedef struct nush_ast {
 } nush_ast;
 
 nush_ast* make_ast_command(svec* command);
-nush_ast* make_ast_op(const char* op, nush_ast* c1, nush_ast* c2);
+nush_ast* make_ast_op(char* op, nush_ast* c1, nush_ast* c2);
 void free_ast(nush_ast* ast);
 
 #endif

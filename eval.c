@@ -4,7 +4,7 @@
 #include <string.h>
 #include <sys/wait.h>
 #include <sys/types.h>
-
+#include <fcntl.h>
 #include "ast.h"
 #include "svec.h"
 
@@ -19,11 +19,29 @@ left_arrow_eval(nush_ast* left, nush_ast* right)
 
 }
 
-//TODO redir left side into right side
 // helper that will allow us to evaluate the right arrow
 static int
-right_arrow_eval(nush_ast* left, nush_ast* right)
-{
+right_arrow_eval(nush_ast* left, nush_ast* right) //right should be a path
+{   
+    int cpid;
+
+    if (cpid = fork()) {
+        int status;
+        waitpid(cpid, &status, 0);
+        if (WIFEXITED(status)) {
+            return WEXITSTATUS(status);
+        }
+    }
+    else { //child process
+        // we need to parse the right first to make sure it's a valid path
+        if(right->command && right->command->size > 0) {
+            int fd = open(right->command->data[0], O_CREAT | O_WRONLY | O_TRUNC, 0644);
+            close(1); // closing stdout
+            dup(fd);
+            close(fd);
+            exit(eval(left));
+        }
+    }
     return eval(left);
 }
 
@@ -118,11 +136,17 @@ eval_base(nush_ast* ast)
     if (ast == NULL) {
         return -1;
     }
-
+    
+    // empty case
+    if (ast->command->size == 0) {
+        return 0;
+    }
+    
     // exit case
     if (strcmp(ast->command->data[0], "exit") == 0) {
         return -1;
     }
+
     
     int cpid;
     if ((cpid = fork())) {
@@ -177,7 +201,7 @@ eval(nush_ast* ast)
     case '<':
         return left_arrow_eval(ast->arg0, ast->arg1);
     case '>':
-        return eval_base(ast->arg0);
+        return right_arrow_eval(ast->arg0, ast->arg1);
     case '|':
         if (op_length == 2 && ast->op[1] == '|') {
             return and_or_eval(ast->arg0, ast->arg1, '|');
