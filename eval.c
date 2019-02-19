@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -11,6 +12,68 @@
 
 //declarations that we need first
 int eval();
+// syscall types (for error handling)
+enum Syscall_Types{PIPE, READ, WRITE};
+
+// pipe, left arrow, and right arrow functions based on lecture 10 notes
+// which were written by Nat Tuck, Northeastern University
+
+// convenience helper
+static int
+syscall_error_check(int code, enum Syscall_Types type) {
+    if (code == -1) {
+        switch(type) {
+            case PIPE:
+                perror("Error: broken pipe");
+            case READ:
+                perror("Error: Read error");
+            case WRITE:
+                perror("Error: Write error");
+        }
+    }
+    return 0;
+}
+
+// helper to evaluate pipes
+static int
+pipe_eval(nush_ast* left, nush_ast* right)
+{   
+    enum Syscall_Types call;
+    int cpid;
+    int return_code;
+    if (cpid = fork()) {
+        int status;
+        waitpid(cpid, &status, 0);
+        if (WIFEXITED(status)) {
+            return WEXITSTATUS(status);
+        }
+    }
+    else {
+        int pipe_fds[2]; //[0] is for reading, [1] is for writing
+        return_code = pipe(pipe_fds);
+        call = PIPE;
+        syscall_error_check(return_code, call);
+        int gcpid;
+        if (gcpid = fork()) { //child-parent
+            int status;
+            close(pipe_fds[1]);
+            close(0);
+            dup(pipe_fds[0]);
+            return_code = eval(right);
+            waitpid(gcpid, &status, 0);
+            return return_code;
+        }
+        else { //grandchild or child-child
+            close(pipe_fds[0]);
+            close(1);
+            dup(pipe_fds[1]);
+            exit(eval(left));
+        }
+    }
+    
+    return 0;
+}
+
 
 // helper that will allow us to use files as input for commands
 // essentially redirecting stdin
@@ -220,8 +283,8 @@ eval_base(nush_ast* ast)
         //printf("== executed program's output: ==\n");
             
         execvp(ast->command->data[0], ast->command->data);
-        printf("%s: command not found (execvp returned error)\n", 
-            ast->command->data[0]);
+        printf("%s: command not found (execvp returned error %s)\n", 
+            ast->command->data[0], strerror(errno));
         exit(1);
     }
     // we shouldn't get here
@@ -253,6 +316,9 @@ eval(nush_ast* ast)
     case '|':
         if (op_length == 2 && ast->op[1] == '|') {
             return and_or_eval(ast->arg0, ast->arg1, '|');
+        }
+        else {
+            return pipe_eval(ast->arg0, ast->arg1);
         }
     case '&':
         if (op_length == 2 && ast->op[1] == '&') {

@@ -56,6 +56,7 @@ main(int argc, char* argv[])
         for (int ii = 0; ii < lines->size; ++ii) {
             execute(lines->data[ii]);
         }
+        free_svec(lines);
     }
 
 
