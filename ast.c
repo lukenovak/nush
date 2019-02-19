@@ -44,7 +44,7 @@ free_ast(nush_ast* ast)
         if (ast->op) {
             free(ast->op);
         }
-
+        
         free(ast);
     }
 }

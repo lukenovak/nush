@@ -68,11 +68,13 @@ tokenize(const char* text, svec* tokens)
             char* op = read_operator(text, ii);
             svec_push_back(tokens, op);
             ii += strlen(op);
+            free(op);
         } 
         else {
             char* argument = read_text_argument(text, ii);
             svec_push_back(tokens, argument);
             ii += strlen(argument);
+            free(argument);
         }
     }
 
