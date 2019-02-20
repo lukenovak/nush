@@ -21,8 +21,7 @@ nush_ast*
 make_ast_op(char* op, nush_ast* c0, nush_ast* c1)
 {
     nush_ast* ast = malloc(sizeof(nush_ast));
-    ast->op = malloc(sizeof(op));
-    memcpy(ast->op, op, strlen(op) + 1);
+    ast->op = strdup(op); 
     ast->arg0 = c0;
     ast->arg1 = c1;
     return ast;
