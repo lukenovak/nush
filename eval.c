@@ -35,6 +35,7 @@ syscall_error_check(int code, enum Syscall_Types type) {
 }
 
 // helper to evaluate pipes
+// based slightly off of lecture 10 lecture notes, written by Nat Tock
 static int
 pipe_eval(nush_ast* left, nush_ast* right)
 {   
@@ -244,9 +245,8 @@ eval_base(nush_ast* ast)
             // we can do tilde expansion with wordexp
             wordexp_t expanded;
             wordexp("~", &expanded, 0);
-            char* home_directory = expanded.we_wordv[0];
+            chdir(expanded.we_wordv[0]);
             wordfree(&expanded);
-            chdir(home_directory);
             return 0;
         }
         else {
@@ -262,32 +262,22 @@ eval_base(nush_ast* ast)
     int cpid;
     if (cpid = fork()) {
         // in the parent process
-        //printf("Parent pid: %d\n", getpid());
-        //printf("Parent knows child pid: %d\n", cpid);
         int status;
         waitpid(cpid, &status, 0);
 
-        //printf("== executed program complete ==\n");
-
-        //printf("child returned with wait code %d\n", status);
         if (WIFEXITED(status)) {
-            //printf("child exited with exit code (or main returned) %d\n", WEXITSTATUS(status));
             return WEXITSTATUS(status);
         }
     }
     else {
         // child process
-        //printf("Child pid: %d\n", getpid());
-        //printf("Child knows parent pid: %d\n", getppid());
-
-        //printf("== executed program's output: ==\n");
         char* args[ast->command->size + 1]; 
         for (int ii = 0; ii < ast->command->size; ++ii) {
             args[ii] = ast->command->data[ii];
         }
         args[ast->command->size] = 0;
         execvp(ast->command->data[0], args);
-        printf("%s: command not found (execvp returned error %s)\n", 
+        printf("nush: %s: %s\n", 
             ast->command->data[0], strerror(errno));
         exit(1);
     }
