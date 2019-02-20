@@ -72,7 +72,8 @@ pipe_eval(nush_ast* left, nush_ast* right)
         }
     }
     
-    return 0;
+    // we should never get here
+    return -1;
 }
 
 
@@ -146,6 +147,9 @@ semicolon_eval(nush_ast* left, nush_ast* right) {
         waitpid(cpid, &status, 0);
         
         if (WIFEXITED(status)) {
+            if (WEXITSTATUS(status) == 255) {
+                return -1;
+            }
             return eval(right);
         }
     }
@@ -198,23 +202,6 @@ and_or_eval(nush_ast* left, nush_ast* right, char op)
         }
     }
     else { // in the child
-        /*int exit_code = eval(left);
-        if (op == '|') {
-            if(exit_code != 0) {
-                exit(eval(right));
-            }
-            else {
-                exit(exit_code);
-            }
-        }
-        else { //and case
-            if (exit_code == 0) {
-                exit(eval(right));
-            }
-            else {
-                exit(exit_code);
-            }
-        }*/
         exit(eval(left));
     }       
 }
