@@ -6,7 +6,7 @@
 #include "svec.h"
 
 // returns true if the character is a shell operator
-bool
+static bool
 isshelloperator(char cc) {
     const char ops[5] = {'|', '&', '>', '<', ';'};
     for (int ii = 0; ii < sizeof(ops); ++ii) {
@@ -17,9 +17,23 @@ isshelloperator(char cc) {
     return false;
 }
 
+// parses quotes (drops the quotes, and goes until we find anothe quote)
+static char*
+read_quote(const char* text, int ii)
+{
+    int nn = 1;
+    while (text[ii + nn] != '\"') {
+        ++nn;
+    }
+    char* quote = malloc(nn + 1);
+    memcpy(quote, text + ii + 1, nn - 1);
+    quote[nn] = 0;
+    return quote;
+}
+
 
 // based on the read_number from lecture 9 lecture notes, by Nat Tuck
-char*
+static char*
 read_text_argument(const char* text, int ii)
 {
     int nn = 0;
@@ -36,7 +50,7 @@ read_text_argument(const char* text, int ii)
 
 // called only when isshelloperator is true, so we know input will be on
 // one of those 5 characters
-char*
+static char*
 read_operator(const char* text, int ii)
 {
     int nn = 1;
@@ -70,6 +84,12 @@ tokenize(const char* text, svec* tokens)
             ii += strlen(op);
             free(op);
         } 
+        else if (text[ii] == '\"') {
+            char* quoted_string = read_quote(text, ii);
+            svec_push_back(tokens, quoted_string);
+            ii += strlen(quoted_string) + 2;
+            free(quoted_string);
+        }
         else {
             char* argument = read_text_argument(text, ii);
             svec_push_back(tokens, argument);
