@@ -281,8 +281,12 @@ eval_base(nush_ast* ast)
         //printf("Child knows parent pid: %d\n", getppid());
 
         //printf("== executed program's output: ==\n");
-            
-        execvp(ast->command->data[0], ast->command->data);
+        char* args[ast->command->size + 1]; 
+        for (int ii = 0; ii < ast->command->size; ++ii) {
+            args[ii] = ast->command->data[ii];
+        }
+        args[ast->command->size] = 0;
+        execvp(ast->command->data[0], args);
         printf("%s: command not found (execvp returned error %s)\n", 
             ast->command->data[0], strerror(errno));
         exit(1);
